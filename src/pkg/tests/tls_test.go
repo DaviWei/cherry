@@ -1,0 +1,34 @@
+package cherry_test
+
+import (
+    "pkg/tls"
+    "testing"
+)
+
+func TestGetCipherSuitesFromClientHello(t *testing.T) {
+    var buffer = "\x16\x03\x01\x00\xc3\x01\x00\x00\xbf\x03\x03\xad\x5b\x00\x16\xb0\x89\x0f\x42\x53\x80\xb0\x86\xe8\xcb\x87\x06\x7e\xd9\x0b\xb3\x94\x1c\xe3\x87\x6d\x60\xf7\xe9\x06\xdc\x33\x24\x00\x00\x1c\xcc\xa9\xcc\xa8\xcc\x14\xcc\x13\xc0\x2b\xc0\x2f\xc0\x0a\xc0\x14\xc0\x09\xc0\x13\x00\x9c\x00\x35\x00\x2f\x00\x0a\x01\x00\x00\x7a\xff\x01\x00\x01\x00\x00\x00\x00\x0f\x00\x0d\x00\x00\x0a\x67\x69\x74\x68\x75\x62\x2e\x63\x6f\x6d\x00\x17\x00\x00\x00\x23\x00\x00\x00\x0d\x00\x16\x00\x14\x06\x01\x06\x03\x05\x01\x05\x03\x04\x01\x04\x03\x03\x01\x03\x03\x02\x01\x02\x03\x00\x05\x00\x05\x01\x00\x00\x00\x00\x33\x74\x00\x00\x00\x12\x00\x00\x00\x10\x00\x17\x00\x15\x02\x68\x32\x08\x73\x70\x64\x79\x2f\x33\x2e\x31\x08\x68\x74\x74\x70\x2f\x31\x2e\x31\x75\x50\x00\x00\x00\x0b\x00\x02\x01\x00\x00\x0a\x00\x06\x00\x04\x00\x17\x00\x18"
+    var expectedCiphers = make([]uint16, 0)
+    expectedCiphers = append(expectedCiphers, 0xcca9)
+    expectedCiphers = append(expectedCiphers, 0xcca8)
+    expectedCiphers = append(expectedCiphers, 0xcc14)
+    expectedCiphers = append(expectedCiphers, 0xcc13)
+    expectedCiphers = append(expectedCiphers, 0xc02b)
+    expectedCiphers = append(expectedCiphers, 0xc02f)
+    expectedCiphers = append(expectedCiphers, 0xc00a)
+    expectedCiphers = append(expectedCiphers, 0xc014)
+    expectedCiphers = append(expectedCiphers, 0xc009)
+    expectedCiphers = append(expectedCiphers, 0xc013)
+    expectedCiphers = append(expectedCiphers, 0x009c)
+    expectedCiphers = append(expectedCiphers, 0x0035)
+    expectedCiphers = append(expectedCiphers, 0x002f)
+    expectedCiphers = append(expectedCiphers, 0x000a)
+    retCiphers := tls.GetCipherSuitesFromClientHello(buffer)
+    if len(retCiphers) != 14 {
+        t.Fail()
+    }
+    for e, retVal := range retCiphers {
+        if retVal != expectedCiphers[e] {
+            t.Fail()
+        }
+    }
+}
