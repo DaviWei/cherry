@@ -139,3 +139,71 @@ func MkServerHello(tlsVersion int, cipherSuite uint16) []byte {
     helloBuf[47] = 0x00
     return helloBuf
 }
+
+func MkServerCertificateExchange(tlsVersion int, certData []byte) []byte {
+    certLen := uint16(len(certData))
+    recLen := uint16(7 + certLen)
+    certBuf := make([]byte, 5 + recLen)
+    certBuf[0] = TLS_REC_TYPE_HANDSHAKE
+    var tlsTemp uint16 = TLS_VERSION_SSL_3_0
+    switch tlsVersion {
+        case 10:
+            tlsTemp = TLS_VERSION_TLS_1_0
+            break
+        case 11:
+            tlsTemp = TLS_VERSION_TLS_1_1
+            break
+        case 12:
+            tlsTemp = TLS_VERSION_TLS_1_2
+            break
+        case 30:
+            tlsTemp = TLS_VERSION_SSL_3_0
+            break
+    }
+    certBuf[1] = uint8(tlsTemp >> 8)
+    certBuf[2] = uint8(tlsTemp & 0xff)
+    certBuf[3] = uint8(recLen >> 8)
+    certBuf[4] = uint8(recLen & 0xff)
+    certBuf[5] = TLS_HANDSHAKE_CERTIFICATE
+    certBuf[6] = 0
+    certBuf[7] = uint8((certLen + 3) >> 8)
+    certBuf[8] = uint8((certLen + 3) & 0xff)
+    certBuf[9] = 0
+    certBuf[10] = uint8(certLen >> 8)
+    certBuf[11] = uint8(certLen & 0xff)
+    offset := 12
+    for _, c := range certData {
+        certBuf[offset] = c
+        offset++
+    }
+    return certBuf
+}
+
+func MkServerHelloDone(tlsVersion int) []byte {
+    doneBuf := make([]byte, 9)
+    doneBuf[0] = TLS_REC_TYPE_HANDSHAKE
+    var tlsTemp uint16 = TLS_VERSION_SSL_3_0
+    switch tlsVersion {
+        case 10:
+            tlsTemp = TLS_VERSION_TLS_1_0
+            break
+        case 11:
+            tlsTemp = TLS_VERSION_TLS_1_1
+            break
+        case 12:
+            tlsTemp = TLS_VERSION_TLS_1_2
+            break
+        case 30:
+            tlsTemp = TLS_VERSION_SSL_3_0
+            break
+    }
+    doneBuf[1] = uint8(tlsTemp >> 8)
+    doneBuf[2] = uint8(tlsTemp & 0xff)
+    doneBuf[3] = 0
+    doneBuf[4] = 4
+    doneBuf[5] = TLS_HANDSHAKE_SERVER_DONE
+    doneBuf[6] = 0
+    doneBuf[7] = 0
+    doneBuf[8] = 0
+    return doneBuf
+}
