@@ -3,6 +3,8 @@ package tls
 import (
     "time"
     "crypto/rand"
+    "crypto/sha1"
+    "crypto/sha256"
 )
 
 const (
@@ -206,4 +208,84 @@ func MkServerHelloDone(tlsVersion int) []byte {
     doneBuf[7] = 0
     doneBuf[8] = 0
     return doneBuf
+}
+
+func MkChangeChiperSpec(tlsVersion int) []byte {
+    changeBuf := make([]byte, 6)
+    changeBuf[0] = TLS_REC_TYPE_CHANGE_CIPHER_SPEC
+    var tlsTemp uint16 = TLS_VERSION_SSL_3_0
+    switch tlsVersion {
+        case 10:
+            tlsTemp = TLS_VERSION_TLS_1_0
+            break
+        case 11:
+            tlsTemp = TLS_VERSION_TLS_1_1
+            break
+        case 12:
+            tlsTemp = TLS_VERSION_TLS_1_2
+            break
+        case 30:
+            tlsTemp = TLS_VERSION_SSL_3_0
+            break
+    }
+    changeBuf[1] = uint8(tlsTemp >> 8)
+    changeBuf[2] = uint8(tlsTemp & 0xff)
+    changeBuf[3] = 0
+    changeBuf[4] = 1
+    changeBuf[5] = 1
+    return changeBuf
+}
+
+func MkServerFinished(tlsVersion int, cipherSuite uint16, preMasterKey [] byte, previousPackets []byte...) []byte {
+    if cipherSuite != TLS_CIPHER_SUITE_RSA_WITH_AES_128_CBC_SHA &&
+       cipherSuite != TLS_CIPHER_SUITE_RSA_WITH_AES_256_CBC_SHA &&
+       cipherSuite != TLS_CIPHER_SUITE_RSA_WITH_AES_128_CBC_SHA256 &&
+       cipherSuite != TLS_CIPHER_SUITE_RSA_WITH_AES_256_CBC_SHA256 {
+        return make([]byte, 0)
+    }
+    previousPacketsSize := len(previousPackets)
+    totalSize := 0
+    for p := 0; p < previousPacketsSize; p++ {
+        totalSize += len(previousPacketSize[p])
+    }
+    dataBuf := make([]byte, totalSize)
+    totalSize = 0
+    for p := 0; p < previousPacketsSize; p++ {
+        copy(dataBuf[totalSize:], previousPackets[p])
+        totalSize += len(previousPackets[p])
+    }
+    var dataBufHash = make([]byte, 0)
+    switch cipherSuite {
+        case TLS_CIPHER_SUITE_RSA_WITH_AES_128_CBC_SHA:
+        case TLS_CIPHER_SUITE_RSA_WITH_AES_256_CBC_SHA:
+            dataBufHash = sha1.Sum(dataBuf)
+            break
+        case TLS_CIPHER_SUITE_RSA_WITH_AES_128_CBC_SHA256:
+        case TLS_CIPHER_SUITE_RSA_WITH_AES_256_CBC_SHA256:
+            dataBufHash = sha256.Sum256(dataBuf)
+            break
+
+    }
+    // TODO(Rafael): Do the encryption/decryption stuff
+    encDataBufHash := make([]byte, 0)
+    finBuf := make([]byte, 4 + len(encDataBufHash))
+    finBuf[0] = TLS_REC_TYPE_HANDSHAKE
+    var tlsTemp uint16 = TLS_VERSION_SSL_3_0
+    switch tlsVersion {
+        case 10:
+            tlsTemp = TLS_VERSION_TLS_1_0
+            break
+        case 11:
+            tlsTemp = TLS_VERSION_TLS_1_1
+            break
+        case 12:
+            tlsTemp = TLS_VERSION_TLS_1_2
+            break
+        case 30:
+            tlsTemp = TLS_VERSION_SSL_3_0
+            break
+    }
+    finBuf[1] = uint8(tlsTemp >> 8)
+    finBuf[2] = uint8(tlsTemp & 0xff)
+    return finishedBuf
 }
