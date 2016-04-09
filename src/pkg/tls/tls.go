@@ -236,33 +236,39 @@ func MkChangeChiperSpec(tlsVersion int) []byte {
     return changeBuf
 }
 
-func MkServerFinished(tlsVersion int, cipherSuite uint16, preMasterKey [] byte, previousPackets []byte...) []byte {
+func MkServerFinished(tlsVersion int, cipherSuite uint16, preMasterKey [] byte, previousPackets ...[]byte) []byte {
     if cipherSuite != TLS_CIPHER_SUITE_RSA_WITH_AES_128_CBC_SHA &&
        cipherSuite != TLS_CIPHER_SUITE_RSA_WITH_AES_256_CBC_SHA &&
        cipherSuite != TLS_CIPHER_SUITE_RSA_WITH_AES_128_CBC_SHA256 &&
        cipherSuite != TLS_CIPHER_SUITE_RSA_WITH_AES_256_CBC_SHA256 {
         return make([]byte, 0)
     }
-    previousPacketsSize := len(previousPackets)
     totalSize := 0
-    for p := 0; p < previousPacketsSize; p++ {
-        totalSize += len(previousPacketSize[p])
+    //for p := 0; p < previousPacketsSize; p++ {
+    //    totalSize += len(previousPacketsSize[p])
+    //}
+    for _, p := range previousPackets {
+        totalSize += len(p)
     }
     dataBuf := make([]byte, totalSize)
     totalSize = 0
-    for p := 0; p < previousPacketsSize; p++ {
-        copy(dataBuf[totalSize:], previousPackets[p])
-        totalSize += len(previousPackets[p])
+    for _, p := range previousPackets {
+        copy(dataBuf[totalSize:], p)
+        totalSize += len(p)
     }
-    var dataBufHash = make([]byte, 0)
+    var dataBufHash []byte
     switch cipherSuite {
         case TLS_CIPHER_SUITE_RSA_WITH_AES_128_CBC_SHA:
         case TLS_CIPHER_SUITE_RSA_WITH_AES_256_CBC_SHA:
-            dataBufHash = sha1.Sum(dataBuf)
+            dataBufHash = make([]byte, 20)
+            temp := sha1.Sum(dataBuf)
+            copy(dataBufHash, temp[0:])
             break
         case TLS_CIPHER_SUITE_RSA_WITH_AES_128_CBC_SHA256:
         case TLS_CIPHER_SUITE_RSA_WITH_AES_256_CBC_SHA256:
-            dataBufHash = sha256.Sum256(dataBuf)
+            dataBufHash = make([]byte, 32)
+            temp := sha256.Sum256(dataBuf)
+            copy(dataBufHash, temp[0:])
             break
 
     }
@@ -287,5 +293,5 @@ func MkServerFinished(tlsVersion int, cipherSuite uint16, preMasterKey [] byte, 
     }
     finBuf[1] = uint8(tlsTemp >> 8)
     finBuf[2] = uint8(tlsTemp & 0xff)
-    return finishedBuf
+    return finBuf
 }
